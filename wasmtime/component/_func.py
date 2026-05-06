@@ -3,7 +3,7 @@ from ctypes import byref, pointer
 import ctypes
 from ._types import ValType, valtype_from_ptr, FuncType
 from typing import List, Tuple, Optional, Any
-from ._enter import enter_wasm
+from ._enter import enter_wasm, maybe_raise_last_exn
 
 
 class Func:
@@ -65,6 +65,79 @@ class Func:
         def run() -> 'ctypes._Pointer[ffi.wasmtime_error_t]':
             return ffi.wasmtime_component_func_post_return(byref(self._func), store._context())
         enter_wasm(run)
+
+    async def call_async(self, store: Storelike, *params: Any) -> Any:
+        """
+        Invokes this function asynchronously.
+
+        Returns a result once the WASM execution completes. While the WASM
+        guest is suspended (e.g., waiting on I/O via host imports), this
+        yields to the asyncio event loop via the AsyncDriver, which waits
+        for Tokio's io_fd to become readable rather than busy-polling.
+
+        Only compatible with stores associated with an async config.
+        """
+        import asyncio
+        from .._async_driver import get_or_create_driver
+
+        fty = self.type(store)
+        param_tys = fty.params
+        result_ty = fty.result
+        if len(params) != len(param_tys):
+            raise TypeError("wrong number of parameters provided: given %s, expected %s" %
+                                (len(params), len(param_tys)))
+        param_capi = (ffi.wasmtime_component_val_t * len(params))()
+        n = 0
+        try:
+            for (_name, ty), val in zip(param_tys, params):
+                ty.convert_to_c(store, val, pointer(param_capi[n]))
+                n += 1
+            result_space = None
+            result_capi = None
+            result_len = 0
+            if result_ty is not None:
+                result_space = ffi.wasmtime_component_val_t()
+                result_capi = byref(result_space)
+                result_len = 1
+
+            error_ptr = ctypes.POINTER(ffi.wasmtime_error_t)()
+            future = ffi.wasmtime_component_func_call_async(
+                byref(self._func),
+                store._context(),
+                param_capi,
+                n,
+                result_capi,
+                result_len,
+                byref(error_ptr))
+
+            if not future:
+                if error_ptr:
+                    raise WasmtimeError._from_ptr(error_ptr)
+                raise WasmtimeError("failed to create async call future")
+
+            # Poll the call future, yielding to the AsyncDriver between polls.
+            # The driver waits for Tokio's io_fd to become readable (I/O
+            # completed or task woken), then we re-poll the call future.
+            driver = get_or_create_driver()
+            try:
+                while not ffi.wasmtime_call_future_poll(future):
+                    await driver.yield_once()
+            finally:
+                ffi.wasmtime_call_future_delete(future)
+
+            if error_ptr:
+                error = WasmtimeError._from_ptr(error_ptr)
+                maybe_raise_last_exn()
+                raise error
+
+            if result_space is None:
+                return None
+            assert(result_ty is not None)
+            return result_ty.convert_from_c(result_space)
+
+        finally:
+            for i in range(n):
+                ffi.wasmtime_component_val_delete(byref(param_capi[i]))
 
     def type(self, store: Storelike) -> FuncType:
         """

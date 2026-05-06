@@ -566,3 +566,29 @@ class Config(Managed["ctypes._Pointer[ffi.wasm_config_t]"]):
         if not isinstance(enable, bool):
             raise TypeError('expected a bool')
         ffi.wasmtime_config_memory_init_cow_set(self.ptr(), enable)
+
+    @setter_property
+    def async_support(self, enable: bool) -> None:
+        """
+        Configures whether async support is enabled for this engine.
+
+        When enabled, WASM execution can be suspended and resumed, allowing
+        async host functions and non-blocking calls via call_async.
+        Internally sets async_stack_size to 2 MiB.
+        """
+        if not isinstance(enable, bool):
+            raise TypeError('expected a bool')
+        if enable:
+            ffi.wasmtime_config_async_stack_size_set(self.ptr(), 2 * 1024 * 1024)
+
+    @setter_property
+    def async_stack_size(self, size: int) -> None:
+        """
+        Configures the size of the stacks used for asynchronous execution.
+
+        The value cannot be less than max_wasm_stack. By default this is 2 MiB.
+        Setting this implicitly enables async support.
+        """
+        if not isinstance(size, int):
+            raise TypeError('expected an int')
+        ffi.wasmtime_config_async_stack_size_set(self.ptr(), size)

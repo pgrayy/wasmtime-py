@@ -34,6 +34,7 @@ from ._linker import Linker
 from ._tag import Tag
 from ._instance_pre import InstancePre
 from ._sharedmemory import SharedMemory
+from ._async_driver import AsyncDriver
 
 __all__ = [
     'wat2wasm',
@@ -70,4 +71,5 @@ __all__ = [
     'TagType',
     'Tag',
     'InstancePre',
+    'AsyncDriver',
 ]

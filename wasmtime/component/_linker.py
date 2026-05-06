@@ -73,6 +73,16 @@ class Linker(Managed["ctypes._Pointer[ffi.wasmtime_component_linker_t]"]):
         if err:
             raise WasmtimeError._from_ptr(err)
 
+    def add_wasi_http(self) -> None:
+        """
+        Adds the WASI HTTP API definitions in this linker.
+        Requires WASIp2 to be added first via add_wasip2().
+        """
+        self._assert_not_locked()
+        err = ffi.wasmtime_component_linker_add_wasi_http(self.ptr())
+        if err:
+            raise WasmtimeError._from_ptr(err)
+
     def instantiate(self, store: Storelike, component: Component) -> Instance:
         """
         Instantiates the given component using this linker within the provided

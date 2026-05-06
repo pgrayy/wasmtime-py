@@ -3139,45 +3139,78 @@ class wasmtime_exn(ctypes.Structure):
 
 wasmtime_exn_t = wasmtime_exn
 
-_wasmtime_exn_delete = dll.wasmtime_exn_delete
-_wasmtime_exn_delete.restype = None
-_wasmtime_exn_delete.argtypes = [ctypes.POINTER(wasmtime_exn_t)]
+try:
+    _wasmtime_exn_delete = dll.wasmtime_exn_delete
+    _wasmtime_exn_delete.restype = None
+    _wasmtime_exn_delete.argtypes = [ctypes.POINTER(wasmtime_exn_t)]
+except AttributeError:
+    _wasmtime_exn_delete = None
 def wasmtime_exn_delete(exn: Any) -> None:
+    if _wasmtime_exn_delete is None:
+        raise NotImplementedError("wasmtime_exn_delete not available")
     return _wasmtime_exn_delete(exn)  # type: ignore
 
-_wasmtime_exn_new = dll.wasmtime_exn_new
-_wasmtime_exn_new.restype = ctypes.POINTER(wasmtime_error_t)
-_wasmtime_exn_new.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_tag_t), ctypes.POINTER(wasmtime_val_t), ctypes.c_size_t, ctypes.POINTER(ctypes.POINTER(wasmtime_exn_t))]
+try:
+    _wasmtime_exn_new = dll.wasmtime_exn_new
+    _wasmtime_exn_new.restype = ctypes.POINTER(wasmtime_error_t)
+    _wasmtime_exn_new.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_tag_t), ctypes.POINTER(wasmtime_val_t), ctypes.c_size_t, ctypes.POINTER(ctypes.POINTER(wasmtime_exn_t))]
+except AttributeError:
+    _wasmtime_exn_new = None
 def wasmtime_exn_new(store: Any, tag: Any, fields: Any, nfields: Any, exn_ret: Any) -> ctypes._Pointer:
+    if _wasmtime_exn_new is None:
+        raise NotImplementedError("wasmtime_exn_new not available")
     return _wasmtime_exn_new(store, tag, fields, nfields, exn_ret)  # type: ignore
 
-_wasmtime_exn_tag = dll.wasmtime_exn_tag
-_wasmtime_exn_tag.restype = ctypes.POINTER(wasmtime_error_t)
-_wasmtime_exn_tag.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_exn_t), ctypes.POINTER(wasmtime_tag_t)]
+try:
+    _wasmtime_exn_tag = dll.wasmtime_exn_tag
+    _wasmtime_exn_tag.restype = ctypes.POINTER(wasmtime_error_t)
+    _wasmtime_exn_tag.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_exn_t), ctypes.POINTER(wasmtime_tag_t)]
+except AttributeError:
+    _wasmtime_exn_tag = None
 def wasmtime_exn_tag(store: Any, exn: Any, tag_ret: Any) -> ctypes._Pointer:
+    if _wasmtime_exn_tag is None:
+        raise NotImplementedError("wasmtime_exn_tag not available")
     return _wasmtime_exn_tag(store, exn, tag_ret)  # type: ignore
 
-_wasmtime_exn_field_count = dll.wasmtime_exn_field_count
-_wasmtime_exn_field_count.restype = ctypes.c_size_t
-_wasmtime_exn_field_count.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_exn_t)]
+try:
+    _wasmtime_exn_field_count = dll.wasmtime_exn_field_count
+    _wasmtime_exn_field_count.restype = ctypes.c_size_t
+    _wasmtime_exn_field_count.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_exn_t)]
+except AttributeError:
+    _wasmtime_exn_field_count = None
 def wasmtime_exn_field_count(store: Any, exn: Any) -> int:
+    if _wasmtime_exn_field_count is None:
+        raise NotImplementedError("wasmtime_exn_field_count not available")
     return _wasmtime_exn_field_count(store, exn)  # type: ignore
 
-_wasmtime_exn_field = dll.wasmtime_exn_field
-_wasmtime_exn_field.restype = ctypes.POINTER(wasmtime_error_t)
-_wasmtime_exn_field.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_exn_t), ctypes.c_size_t, ctypes.POINTER(wasmtime_val_t)]
+try:
+    _wasmtime_exn_field = dll.wasmtime_exn_field
+    _wasmtime_exn_field.restype = ctypes.POINTER(wasmtime_error_t)
+    _wasmtime_exn_field.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_exn_t), ctypes.c_size_t, ctypes.POINTER(wasmtime_val_t)]
+except AttributeError:
+    _wasmtime_exn_field = None
 def wasmtime_exn_field(store: Any, exn: Any, index: Any, val_ret: Any) -> ctypes._Pointer:
+    if _wasmtime_exn_field is None:
+        raise NotImplementedError("wasmtime_exn_field not available")
     return _wasmtime_exn_field(store, exn, index, val_ret)  # type: ignore
 
-_wasmtime_context_set_exception = dll.wasmtime_context_set_exception
-_wasmtime_context_set_exception.restype = ctypes.POINTER(wasm_trap_t)
-_wasmtime_context_set_exception.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_exn_t)]
+try:
+    _wasmtime_context_set_exception = dll.wasmtime_context_set_exception
+    _wasmtime_context_set_exception.restype = ctypes.POINTER(wasm_trap_t)
+    _wasmtime_context_set_exception.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_exn_t)]
+except AttributeError:
+    _wasmtime_context_set_exception = None
 def wasmtime_context_set_exception(store: Any, exn: Any) -> ctypes._Pointer:
+    if _wasmtime_context_set_exception is None:
+        raise NotImplementedError("wasmtime_context_set_exception not available")
     return _wasmtime_context_set_exception(store, exn)  # type: ignore
 
-_wasmtime_context_take_exception = dll.wasmtime_context_take_exception
-_wasmtime_context_take_exception.restype = ctypes.c_bool
-_wasmtime_context_take_exception.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(ctypes.POINTER(wasmtime_exn_t))]
+try:
+    _wasmtime_context_take_exception = dll.wasmtime_context_take_exception
+    _wasmtime_context_take_exception.restype = ctypes.c_bool
+    _wasmtime_context_take_exception.argtypes = [ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(ctypes.POINTER(wasmtime_exn_t))]
+except AttributeError:
+    _wasmtime_context_take_exception = None
 def wasmtime_context_take_exception(store: Any, exn_ret: Any) -> bool:
     return _wasmtime_context_take_exception(store, exn_ret)  # type: ignore
 
@@ -5255,6 +5288,12 @@ _wasmtime_component_func_call.restype = ctypes.POINTER(wasmtime_error_t)
 _wasmtime_component_func_call.argtypes = [ctypes.POINTER(wasmtime_component_func_t), ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_component_val_t), ctypes.c_size_t, ctypes.POINTER(wasmtime_component_val_t), ctypes.c_size_t]
 def wasmtime_component_func_call(func: Any, context: Any, args: Any, args_size: Any, results: Any, results_size: Any) -> ctypes._Pointer:
     return _wasmtime_component_func_call(func, context, args, args_size, results, results_size)  # type: ignore
+
+_wasmtime_component_func_call_async = dll.wasmtime_component_func_call_async
+_wasmtime_component_func_call_async.restype = ctypes.POINTER(wasmtime_call_future_t)
+_wasmtime_component_func_call_async.argtypes = [ctypes.POINTER(wasmtime_component_func_t), ctypes.POINTER(wasmtime_context_t), ctypes.POINTER(wasmtime_component_val_t), ctypes.c_size_t, ctypes.POINTER(wasmtime_component_val_t), ctypes.c_size_t, ctypes.POINTER(ctypes.POINTER(wasmtime_error_t))]
+def wasmtime_component_func_call_async(func: Any, context: Any, args: Any, args_size: Any, results: Any, results_size: Any, error_ret: Any) -> ctypes._Pointer:
+    return _wasmtime_component_func_call_async(func, context, args, args_size, results, results_size, error_ret)  # type: ignore
 
 _wasmtime_component_func_post_return = dll.wasmtime_component_func_post_return
 _wasmtime_component_func_post_return.restype = ctypes.POINTER(wasmtime_error_t)
