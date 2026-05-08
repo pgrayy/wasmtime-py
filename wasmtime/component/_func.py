@@ -1,9 +1,11 @@
 from .. import _ffi as ffi, WasmtimeError, Storelike
+from .._notify_bridge import NotifyBridge
 from ctypes import byref, pointer
+import asyncio
 import ctypes
 from ._types import ValType, valtype_from_ptr, FuncType
 from typing import List, Tuple, Optional, Any
-from ._enter import enter_wasm
+from ._enter import enter_wasm, maybe_raise_last_exn
 
 
 class Func:
@@ -57,6 +59,65 @@ class Func:
             for i in range(n):
                 ffi.wasmtime_component_val_delete(byref(param_capi[i]))
 
+    async def call_async(self, store: Storelike, *params: Any) -> Any:
+        """Invoke this function asynchronously.
+
+        Uses a socket-pair notification bridge so Python's asyncio event loop
+        sleeps until wasmtime's background Tokio threads signal completion.
+        """
+
+        fty = self.type(store)
+        param_tys = fty.params
+        result_ty = fty.result
+        if len(params) != len(param_tys):
+            raise TypeError("wrong number of parameters provided: given %s, expected %s" %
+                                (len(params), len(param_tys)))
+        param_capi = (ffi.wasmtime_component_val_t * len(params))()
+        n = 0
+        try:
+            for (_name, ty), val in zip(param_tys, params):
+                ty.convert_to_c(store, val, pointer(param_capi[n]))
+                n += 1
+            result_space = None
+            result_capi = None
+            result_len = 0
+            if result_ty is not None:
+                result_space = ffi.wasmtime_component_val_t()
+                result_capi = byref(result_space)
+                result_len = 1
+            error_ptr = ctypes.POINTER(ffi.wasmtime_error_t)()
+            future = ffi.wasmtime_component_func_call_async(
+                byref(self._func),
+                store._context(),
+                param_capi,
+                n,
+                result_capi,
+                result_len,
+                byref(error_ptr))
+
+            try:
+                if not ffi.wasmtime_call_future_poll(future):
+                    loop = asyncio.get_running_loop()
+                    bridge = NotifyBridge()
+                    try:
+                        while not ffi.wasmtime_call_future_poll_with_notify(future, bridge.write_fd):
+                            await loop.sock_recv(bridge.read_sock, 64)
+                    finally:
+                        bridge.close()
+            finally:
+                ffi.wasmtime_call_future_delete(future)
+
+            if error_ptr:
+                raise WasmtimeError._from_ptr(error_ptr)
+
+            if result_space is None:
+                return None
+            assert(result_ty is not None)
+            return result_ty.convert_from_c(result_space)
+
+        finally:
+            for i in range(n):
+                ffi.wasmtime_component_val_delete(byref(param_capi[i]))
 
     def post_return(self, store: Storelike) -> None:
         """

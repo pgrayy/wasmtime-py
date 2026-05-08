@@ -73,6 +73,37 @@ class Linker(Managed["ctypes._Pointer[ffi.wasmtime_component_linker_t]"]):
         if err:
             raise WasmtimeError._from_ptr(err)
 
+    def add_wasip2_async(self) -> None:
+        """Adds the WASIp2 API definitions with async host functions.
+
+        Use this instead of add_wasip2() when calling WASM functions via
+        call_async(). Async host functions yield Pending on I/O, allowing
+        the Python event loop to run other tasks during the wait.
+        """
+        self._assert_not_locked()
+        err = ffi.wasmtime_component_linker_add_wasip2_async(self.ptr())
+        if err:
+            raise WasmtimeError._from_ptr(err)
+
+    def add_wasi_http(self) -> None:
+        """Adds the WASI HTTP API definitions in this linker."""
+        self._assert_not_locked()
+        err = ffi.wasmtime_component_linker_add_wasi_http(self.ptr())
+        if err:
+            raise WasmtimeError._from_ptr(err)
+
+    def add_wasi_http_async(self) -> None:
+        """Adds the WASI HTTP API definitions with async host functions.
+
+        Use this instead of add_wasi_http() when calling WASM functions via
+        call_async(). Async host functions yield Pending on I/O, allowing
+        the Python event loop to run other tasks during the wait.
+        """
+        self._assert_not_locked()
+        err = ffi.wasmtime_component_linker_add_wasi_http_async(self.ptr())
+        if err:
+            raise WasmtimeError._from_ptr(err)
+
     def instantiate(self, store: Storelike, component: Component) -> Instance:
         """
         Instantiates the given component using this linker within the provided
@@ -89,6 +120,32 @@ class Linker(Managed["ctypes._Pointer[ffi.wasmtime_component_linker_t]"]):
             byref(instance))
         if err:
             raise WasmtimeError._from_ptr(err)
+        return Instance._from_raw(instance)
+
+    def instantiate_async(self, store: Storelike, component: Component) -> Instance:
+        """Instantiates the component using async host functions.
+
+        Required when the engine has wasm_component_model_async enabled.
+        Polls the instantiation future to completion synchronously (instantiation
+        itself is fast — no I/O).
+        """
+        import ctypes
+        self._assert_not_locked()
+        instance = ffi.wasmtime_component_instance_t()
+        error_ptr = ctypes.POINTER(ffi.wasmtime_error_t)()
+        future = ffi.wasmtime_component_linker_instantiate_async(
+            self.ptr(),
+            store._context(),
+            component.ptr(),
+            byref(instance),
+            byref(error_ptr))
+        try:
+            while not ffi.wasmtime_call_future_poll(future):
+                pass
+        finally:
+            ffi.wasmtime_call_future_delete(future)
+        if error_ptr:
+            raise WasmtimeError._from_ptr(error_ptr)
         return Instance._from_raw(instance)
 
     def define_unknown_imports_as_traps(self, component: Component) -> None:

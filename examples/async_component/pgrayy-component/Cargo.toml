@@ -1,0 +1,17 @@
+[package]
+name = "pgrayy-component"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.57"
+
+[target.wasm32-wasip2.dependencies]
+wasi = "0.14.7"
+wasi-http-client = "0.2.1"
+
+[package.metadata.component]
+package = "pgrayy:client"
