@@ -1,6 +1,6 @@
 import unittest
 
-from wasmtime import Engine, WasmtimeError, Module, Store
+from wasmtime import Config, Engine, WasmtimeError, Module, Store
 from wasmtime.component import Linker, Component, LinkerInstance
 
 
@@ -87,6 +87,20 @@ class TestLinker(unittest.TestCase):
                 l2.add_wasip2()
             l2.allow_shadowing = True
             l2.add_wasip2()
+
+    def test_add_wasip2_async(self):
+        config = Config()
+        config.wasm_component_model_async = True
+        engine = Engine(config)
+        linker = Linker(engine)
+        linker.add_wasip2_async()
+
+    def test_add_wasi_http_async(self):
+        config = Config()
+        config.wasm_component_model_async = True
+        engine = Engine(config)
+        linker = Linker(engine)
+        linker.add_wasi_http_async()
 
     def test_host_exception(self):
         engine = Engine()

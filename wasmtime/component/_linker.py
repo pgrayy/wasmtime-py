@@ -73,6 +73,28 @@ class Linker(Managed["ctypes._Pointer[ffi.wasmtime_component_linker_t]"]):
         if err:
             raise WasmtimeError._from_ptr(err)
 
+    def add_wasip2_async(self) -> None:
+        """Adds WASIp2 host functions that can suspend on I/O.
+
+        Required for call_async() to yield back to the event loop
+        while waiting on WASI operations.
+        """
+        self._assert_not_locked()
+        err = ffi.wasmtime_component_linker_add_wasip2_async(self.ptr())
+        if err:
+            raise WasmtimeError._from_ptr(err)
+
+    def add_wasi_http_async(self) -> None:
+        """Adds WASI HTTP host functions that can suspend on I/O.
+
+        Required for call_async() to yield back to the event loop
+        while waiting on HTTP operations.
+        """
+        self._assert_not_locked()
+        err = ffi.wasmtime_component_linker_add_wasi_http_async(self.ptr())
+        if err:
+            raise WasmtimeError._from_ptr(err)
+
     def instantiate(self, store: Storelike, component: Component) -> Instance:
         """
         Instantiates the given component using this linker within the provided

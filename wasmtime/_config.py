@@ -179,6 +179,38 @@ class Config(Managed["ctypes._Pointer[ffi.wasm_config_t]"]):
         ffi.wasmtime_config_wasm_component_model_map_set(self.ptr(), enable)
 
     @setter_property
+    def wasm_component_model_async(self, enable: bool) -> None:
+        """Enables async support for the component model.
+
+        Required for call_async() to yield Pending on I/O operations.
+        """
+        if not isinstance(enable, bool):
+            raise TypeError("expected a bool")
+        ffi.wasmtime_config_wasm_component_model_async_set(self.ptr(), enable)
+
+    @setter_property
+    def async_stack_size(self, size: int) -> None:
+        """Sets the size of stacks used for async calls. Enables async support.
+
+        Must be larger than max_wasm_stack. Default is 2 MiB.
+        """
+        if not isinstance(size, int):
+            raise TypeError("expected an int")
+        ffi.wasmtime_config_async_stack_size_set(self.ptr(), size)
+
+    @setter_property
+    def async_allow_sync(self, enable: bool) -> None:
+        """Permits synchronous calls on stores with async host functions linked.
+
+        When enabled, sync calls to non-suspending functions are allowed even
+        if the store has async host functions. If a sync-called function
+        suspends, the runtime will panic. Default is False.
+        """
+        if not isinstance(enable, bool):
+            raise TypeError("expected a bool")
+        ffi.wasmtime_config_async_allow_sync_set(self.ptr(), enable)
+
+    @setter_property
     def wasm_exceptions(self, enable: bool) -> None:
         """
         Configures whether the wasm [exceptions proposal] is enabled.

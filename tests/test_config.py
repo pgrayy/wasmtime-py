@@ -58,6 +58,9 @@ class TestConfig(unittest.TestCase):
         config.native_unwind_info = True
         config.macos_use_mach_ports = True
         config.signals_based_traps = True
+        config.async_stack_size = 4 * 1024 * 1024
+        config.wasm_component_model_async = True
+        config.async_allow_sync = True
 
         config.memory_may_move = True
         config.memory_reservation = 1 << 20
