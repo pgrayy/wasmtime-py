@@ -1,6 +1,6 @@
 import unittest
 from dataclasses import dataclass
-from wasmtime import Store, WasmtimeError, Engine
+from wasmtime import Config, Store, WasmtimeError, Engine
 from wasmtime.component import *
 from typing import Any, List
 
@@ -76,7 +76,7 @@ def retptr_component(ty_wit: str, ty_wasm: str):
         )
     """
 
-class TestFunc(unittest.TestCase):
+class TestFunc(unittest.IsolatedAsyncioTestCase):
     def roundtrip(self, wat: str, values: List[Any], bad = TypeError) -> None:
         engine = Engine()
         store = Store(engine)
@@ -202,6 +202,31 @@ class TestFunc(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             b(store)
+
+    async def test_call_async(self):
+        config = Config()
+        config.wasm_component_model = True
+        config.wasm_component_model_async = True
+        engine = Engine(config)
+        store = Store(engine)
+        component = Component(engine, """
+            (component
+                (core module $a
+                    (func (export "add") (param i32 i32) (result i32)
+                        local.get 0
+                        local.get 1
+                        i32.add)
+                )
+                (core instance $a (instantiate $a))
+                (func (export "add") (param "x" s32) (param "y" s32) (result s32)
+                    (canon lift (core func $a "add")))
+            )
+        """)
+        instance = Linker(engine).instantiate(store, component)
+        add_fn = instance.get_func(store, 'add')
+        assert add_fn is not None
+        result = await add_fn.call_async(store, 3, 4)
+        self.assertEqual(result, 7)
 
     def test_roundtrip_empty(self):
         engine = Engine()
