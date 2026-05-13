@@ -18,6 +18,8 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -31,7 +33,7 @@ jobs:
         working-directory: wasmtime-src
         run: cargo build --release -p wasmtime-c-api
 
-      - name: Link library (Unix)
+      - name: Link library (Linux)
         if: runner.os == 'Linux'
         run: |
           mkdir -p wasmtime/linux-x86_64
@@ -50,6 +52,15 @@ jobs:
           New-Item -ItemType Directory -Force -Path wasmtime\win32-x86_64
           Copy-Item wasmtime-src\target\release\wasmtime.dll wasmtime\win32-x86_64\_wasmtime.dll
 
-      - name: Run tests
+      - name: Run unit tests
         run: python -m unittest tests.component.test_func tests.component.test_linker tests.test_config -v
+        timeout-minutes: 2
+
+      - name: Build WASM component
+        working-directory: examples/demo/pgrayy-component
+        run: cargo build --target wasm32-wasip2 --release
+
+      - name: Run demo
+        working-directory: examples/demo
+        run: python demo.py
         timeout-minutes: 2
